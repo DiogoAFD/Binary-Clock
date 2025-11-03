@@ -1,6 +1,0 @@
-@BinaryClock.Server_HostAddress = http://localhost:5018
-
-GET {{BinaryClock.Server_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
