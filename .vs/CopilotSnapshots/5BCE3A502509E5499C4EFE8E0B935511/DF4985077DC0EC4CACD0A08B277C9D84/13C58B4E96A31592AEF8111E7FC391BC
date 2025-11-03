@@ -1,0 +1,198 @@
+﻿<template>
+ <div class="binary-clock">
+ <div class="clock-section">
+ <div v-for="(part, i) in timeParts" :key="part.label" class="clock-row">
+ <div v-if="showLabels" class="row-label">
+ {{ part.label }}: {{ part.value }} ({{ part.binary }})
+ </div>
+ <div class="binary-row-labels">
+ <div v-if="showBitValues && showLabels && showCalculations && i ===0" class="bit-labels-row">
+ <span v-for="bit in bitValues" :key="bit" class="bit-label">{{ bit }}</span>
+ </div>
+ <div class="binary-row-horizontal">
+ <div v-if="(!showLabels && showBitValues && showCalculations && i ===0) || (showBitValues && !showLabels && showCalculations && i ===0) || (showBitValues && !showCalculations && i ===0) || (showBitValues && showLabels && !showCalculations && i ===0) || (showBitValues && !showLabels && !showCalculations && i ===0)" class="bit-labels-row">
+ <span v-for="bit in bitValues" :key="bit" class="bit-label">{{ bit }}</span>
+ </div>
+ <div class="bit-circles-row">
+ <span v-for="(bit, j) in part.binary" :key="j" class="bit-circle" :class="{ filled: bit === '1' }"></span>
+ </div>
+ <div v-if="showCalculations" class="calculation">
+ {{ calculationString(part.binary, bitValues) }}
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="date-section">
+ <div v-for="(part, i) in dateParts" :key="part.label" class="date-row">
+ <div v-if="showLabels" class="row-label">
+ {{ part.label }}: {{ part.value }} ({{ part.binary }})
+ </div>
+ <div class="binary-row-labels">
+ <div v-if="showBitValues && showLabels && showCalculations && i ===0" class="bit-labels-row">
+ <span v-for="bit in dateBitValues" :key="bit" class="bit-label">{{ bit }}</span>
+ </div>
+ <div class="binary-row-horizontal">
+ <div v-if="(!showLabels && showBitValues && showCalculations && i ===0) || (showBitValues && !showLabels && showCalculations && i ===0) || (showBitValues && !showCalculations && i ===0) || (showBitValues && showLabels && !showCalculations && i ===0) || (showBitValues && !showLabels && !showCalculations && i ===0)" class="bit-labels-row">
+ <span v-for="bit in dateBitValues" :key="bit" class="bit-label">{{ bit }}</span>
+ </div>
+ <div class="bit-circles-row">
+ <span v-for="(bit, j) in part.binary" :key="j" class="bit-circle date" :class="{ filled: bit === '1' }"></span>
+ </div>
+ <div v-if="showCalculations" class="calculation">
+ {{ calculationString(part.binary, dateBitValues) }}
+ </div>
+ </div>
+ </div>
+ </div>
+ </div>
+ <div class="controls">
+ <label><input type="checkbox" v-model="showBitValues" /> Tvíundar gildi</label>
+ <label><input type="checkbox" v-model="showLabels" /> Sýna merki</label>
+ <label><input type="checkbox" v-model="showCalculations" /> Sýna útreikninga</label>
+ </div>
+ </div>
+</template>
+
+<script lang="ts">
+import { defineComponent, ref, computed, onMounted, onUnmounted } from 'vue';
+
+export default defineComponent({
+ name: 'BinaryClock',
+ setup() {
+ const showBitValues = ref(false);
+ const showLabels = ref(false);
+ const showCalculations = ref(false);
+ const now = ref(new Date());
+ let timer: number;
+
+ onMounted(() => {
+ timer = window.setInterval(() => {
+ now.value = new Date();
+ },1000);
+ });
+ onUnmounted(() => {
+ clearInterval(timer);
+ });
+
+ const bitValues = [32,16,8,4,2,1];
+ const dateBitValues = [128,64,32,16,8,4,2,1];
+
+ const timeParts = computed(() => {
+ const labels = ['Hour', 'Minute', 'Second'];
+ const values = [now.value.getHours(), now.value.getMinutes(), now.value.getSeconds()];
+ return values.map((v, i) => ({
+ label: labels[i],
+ value: v,
+ binary: v.toString(2).padStart(6, '0')
+ }));
+ });
+
+ const dateParts = computed(() => {
+ const year = now.value.getFullYear().toString().padStart(4, '0');
+ const yearFirstTwo = parseInt(year.substring(0,2),10);
+ const yearLastTwo = parseInt(year.substring(2,4),10);
+ const month = now.value.getMonth() +1;
+ const day = now.value.getDate();
+ const labels = ['Day', 'Month', 'Year (1-2)', 'Year (3-4)'];
+ const values = [day, month, yearFirstTwo, yearLastTwo];
+ return values.map((v, i) => ({
+ label: labels[i],
+ value: v,
+ binary: v.toString(2).padStart(8, '0')
+ }));
+ });
+
+ function calculationString(binary: string, bits: number[]) {
+ return binary.split('').map((b, i) => b === '1' ? bits[i] :0).join('+');
+ }
+
+ return {
+ showBitValues,
+ showLabels,
+ showCalculations,
+ timeParts,
+ dateParts,
+ bitValues,
+ dateBitValues,
+ calculationString
+ };
+ }
+});
+</script>
+
+<style scoped>
+.binary-clock {
+ font-family: Arial, sans-serif;
+ padding:2em;
+}
+.controls {
+ margin-top:2em;
+ display: flex;
+ gap:2em;
+}
+.controls label {
+ margin-right:0;
+ margin-bottom:0;
+ white-space: nowrap;
+}
+.clock-section, .date-section {
+ margin-bottom:2em;
+}
+.clock-row, .date-row {
+ display: flex;
+ align-items: flex-start;
+ margin-bottom:1em;
+}
+.row-label {
+ min-width:180px;
+ font-weight: bold;
+ margin-right:1em;
+}
+.binary-row-labels {
+ display: flex;
+ flex-direction: column;
+ align-items: flex-start;
+}
+.binary-row-horizontal {
+ display: flex;
+ align-items: center;
+}
+.bit-labels-row {
+ display: flex;
+ margin-bottom:0.5em;
+}
+.bit-label {
+ width:30px;
+ text-align: center;
+ color: darkred;
+ font-size:1em;
+ font-weight: bold;
+}
+.bit-circles-row {
+ display: flex;
+}
+.bit-circle {
+ width:30px;
+ height:30px;
+ border-radius:50%;
+ border:2px solid gray;
+ margin-right:8px;
+ background: white;
+ display: inline-block;
+}
+.bit-circle.filled {
+ background: darkblue;
+ border-color: darkblue;
+}
+.bit-circle.date.filled {
+ background: darkgreen;
+ border-color: darkgreen;
+}
+.calculation {
+ margin-left:1em;
+ color: darkblue;
+ font-size:1em;
+ font-weight: bold;
+}
+</style>
